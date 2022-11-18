@@ -1,5 +1,4 @@
-[env]
-RUST_LOG = "info"
+
 
 # Sample TOML configuration file for building Rust.
 #
@@ -783,3 +782,6 @@ changelog-seen = 2
 #
 # This list must be non-empty.
 #compression-formats = ["gz", "xz"]
+
+[env]
+RUST_LOG = "info" # Set to "debug" for more verbose output, debug, info, warn, error
