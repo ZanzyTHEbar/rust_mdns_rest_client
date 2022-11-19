@@ -1,10 +1,13 @@
 //! A mdns query client.
 
 #![allow(dead_code, unused_imports, unused_variables)]
-#![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
+#![cfg_attr(
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
+)]
 
-use mdns_sd::{ ServiceDaemon, ServiceEvent };
-use log::{ info };
+use log::info;
+use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::collections::hash_map::HashMap;
 
 /// A struct to hold the mDNS query results
@@ -45,10 +48,13 @@ impl Mdns {
 /// ## Notes
 /// ***The service type should not have a '.' or a 'local' at the end.*** <br>
 /// ***The program adds ".local." automatically.***
-pub fn run_query(instance: &mut Mdns, mut service_type: String, scan_time: u64) {
-    let mdns = ServiceDaemon::new().expect(
-        "Failed to create daemon. Please install Bonjour on your system"
-    );
+pub fn run_query(
+    instance: &mut Mdns,
+    mut service_type: String,
+    scan_time: u64,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mdns = ServiceDaemon::new()
+        .expect("Failed to create daemon. Please install Bonjour on your system");
     //* Browse for a service type.
     service_type.push_str(".local.");
     let receiver = mdns
@@ -82,11 +88,16 @@ pub fn run_query(instance: &mut Mdns, mut service_type: String, scan_time: u64) 
                     instance.name.push(name.to_string());
                 }
                 other_event => {
-                    info!("At {:?} : Received other event: {:?}", now.elapsed(), &other_event);
+                    info!(
+                        "At {:?} : Received other event: {:?}",
+                        now.elapsed(),
+                        &other_event
+                    );
                 }
             }
         }
     }
+    Ok(())
 }
 
 /// Returns a map of the base urls found
@@ -105,7 +116,7 @@ pub fn run_query(instance: &mut Mdns, mut service_type: String, scan_time: u64) 
 ///let ref_mdns = &mut mdns;
 ///m_dnsquery::run_query(ref_mdns, String::from("_http._tcp"), 10);
 /// // Get the base urls map
-///let urls_map = m_dnsquery::get_url_map(ref_mdns); 
+///let urls_map = m_dnsquery::get_url_map(ref_mdns);
 /// ```
 pub fn get_url_map(instance: &mut Mdns) -> &mut HashMap<String, String> {
     &mut instance.base_url
