@@ -1,9 +1,4 @@
-//!! A mdns query client.
-//!!
-//!! Note: there is no '.' at the end as the program adds ".local." automatically.
-//!!
-//!! Keeps listening for new events for X seconds.
-//!!
+//! A mdns query client.
 
 #![allow(dead_code, unused_imports, unused_variables)]
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
@@ -12,12 +7,19 @@ use mdns_sd::{ ServiceDaemon, ServiceEvent };
 use log::{ info };
 use std::collections::hash_map::HashMap;
 
+/// A struct to hold the mDNS query results
+/// - `base_url`: a hashmap of the base urls found
+/// - `name`: a vector of the names of the devices found
 #[derive(Debug)]
 pub struct Mdns {
     pub base_url: HashMap<String, String>,
     pub name: Vec<String>,
 }
 
+/// A function to check if the mDNS struct can hold another instance
+/// - `other`: a reference to the Mdns struct
+/// ## Returns
+/// - `bool`: true if the reference to the Mdns struct is smaller than the current struct instance
 impl Mdns {
     pub fn can_hold(&self, other: &Mdns) -> bool {
         self.base_url.len() > other.base_url.len()
@@ -54,6 +56,7 @@ pub fn run_query(instance: &mut Mdns, mut service_type: String, scan_time: u64) 
         .expect("Failed to browse. Please install Bonjour on your system.");
     let now = std::time::Instant::now();
     //* listen for event then stop the event loop after 5 seconds.
+    // while let Ok(event) = receiver.recv() {}
     while now.elapsed().as_secs() < scan_time {
         //* let event = receiver.recv().expect("Failed to receive event");
         if let Ok(event) = receiver.recv() {
@@ -133,23 +136,3 @@ pub fn get_urls(instance: &Mdns) -> Vec<&String> {
     }
     urls
 }
-
-/* while let Ok(event) = receiver.recv() {
-        match event {
-            ServiceEvent::ServiceResolved(info) => {
-                info!(
-                    "At {:?}: Resolved a new service: {} IP: {:?}:{:?}",
-                    now.elapsed(),
-                    info.get_fullname(),
-                    info.get_addresses(),
-                    info.get_port()
-                );
-                base_url.base_url.push(
-                    format!("http://{}:{:?}", info.get_fullname(), info.get_port())
-                );
-            }
-            other_event => {
-                info!("At {:?} : Received other event: {:?}", now.elapsed(), &other_event);
-            }
-        }
-    } */
