@@ -1,10 +1,10 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
-pub mod includes;
+pub mod modules;
 
 use log::info;
-use includes::m_dnsquery;
+use modules::m_dnsquery;
 use std::collections::hash_map::HashMap;
 
 fn main() {
