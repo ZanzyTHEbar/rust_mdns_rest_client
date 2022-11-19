@@ -5,12 +5,13 @@ pub mod includes;
 
 use log::info;
 use includes::m_dnsquery;
+use std::collections::hash_map::HashMap;
 
 fn main() {
     env_logger::init();
 
-    let mut mdns:m_dnsquery::MDNS = m_dnsquery::MDNS {
-        base_url: std::collections::HashMap::new(),
+    let mut mdns: m_dnsquery::MDNS = m_dnsquery::MDNS {
+        base_url: HashMap::new(),
     };
 
     let ref_mdns = &mut mdns;
