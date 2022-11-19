@@ -2,7 +2,7 @@
 //
 // Note: there is no '.' at the end as the program adds ".local." automatically.
 //
-// Keeps listening for new events for 10 seconds.
+// Keeps listening for new events for X seconds.
 #![allow(dead_code, unused_imports, unused_variables)]
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
