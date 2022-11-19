@@ -63,13 +63,14 @@ pub fn run_query(instance: &mut MDNS, mut service_type: String, scan_time: u64) 
     }
 }
 
-pub fn get_urls(instance: &MDNS) -> String {
-    let mut urls = String::new();
+pub fn get_url_map(instance: &MDNS) -> &HashMap<String, String> {
+    &instance.base_url
+}
+
+pub fn get_urls(instance: &MDNS) -> Vec<&String> {
+    let mut urls: Vec<&String> = Vec::new();
     for (name, url) in &instance.base_url {
-        //urls.push_str(name);
-        //urls.push_str(": ");
-        urls.push_str(url);
-        //urls.push_str(""); // newline
+        urls.push(url);
     }
     urls
 }
