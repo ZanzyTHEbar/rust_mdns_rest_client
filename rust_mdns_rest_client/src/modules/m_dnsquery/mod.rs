@@ -1,4 +1,4 @@
-// A mDNS query client.
+// A mdns query client.
 //
 // Note: there is no '.' at the end as the program adds ".local." automatically.
 //
@@ -11,17 +11,17 @@ use log::{ info };
 use std::collections::hash_map::HashMap;
 
 #[derive(Debug)]
-pub struct MDNS {
+pub struct Mdns {
     pub base_url: HashMap<String, String>,
 }
 
-impl MDNS {
-    pub fn can_hold(&self, other: &MDNS) -> bool {
+impl Mdns {
+    pub fn can_hold(&self, other: &Mdns) -> bool {
         self.base_url.len() > other.base_url.len()
     }
 }
 
-pub fn run_query(instance: &mut MDNS, mut service_type: String, scan_time: u64) {
+pub fn run_query(instance: &mut Mdns, mut service_type: String, scan_time: u64) {
     let mdns = ServiceDaemon::new().expect(
         "Failed to create daemon. Please install Bonjour on your system"
     );
@@ -63,11 +63,11 @@ pub fn run_query(instance: &mut MDNS, mut service_type: String, scan_time: u64) 
     }
 }
 
-pub fn get_url_map(instance: &MDNS) -> &HashMap<String, String> {
+pub fn get_url_map(instance: &Mdns) -> &HashMap<String, String> {
     &instance.base_url
 }
 
-pub fn get_urls(instance: &MDNS) -> Vec<&String> {
+pub fn get_urls(instance: &Mdns) -> Vec<&String> {
     let mut urls: Vec<&String> = Vec::new();
     for (name, url) in &instance.base_url {
         urls.push(url);
