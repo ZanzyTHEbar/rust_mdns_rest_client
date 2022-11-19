@@ -12,6 +12,11 @@ use reqwest::Client;
 use log::{ debug, info, warn, error };
 use std::collections::hash_map::HashMap;
 use crate::modules::m_dnsquery;
+use lazy_static::lazy_static;
+
+/* lazy_static! {
+    static ref ;
+} */
 
 pub struct RESTClient {
     http_client: Client,
@@ -31,6 +36,7 @@ impl RESTClient {
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut mdns: m_dnsquery::Mdns = m_dnsquery::Mdns {
         base_url: HashMap::new(),
+        name: Vec::new(),
     };
 
     let ref_mdns = &mut mdns;
@@ -38,10 +44,11 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting MDNS query");
     m_dnsquery::run_query(ref_mdns, String::from("_waterchamber._tcp"), 10);
     info!("MDNS query complete");
-    info!("MDNS query results: {:#?}", m_dnsquery::get_urls(&mdns));
+    info!("MDNS query results: {:#?}", m_dnsquery::get_urls(ref_mdns)); // get's an array of the base urls found
     info!("Starting up REST clients");
     debug!("Instatiating REST client for device 1");
-    //let mut rest_client = RESTClient::new();
+    let urls_map = m_dnsquery::get_url_map(ref_mdns); 
+    let rest_client = RESTClient::new(urls_map.remove("waterchamber").unwrap());
 
     debug!("Instatiating REST client for device 2");
 
