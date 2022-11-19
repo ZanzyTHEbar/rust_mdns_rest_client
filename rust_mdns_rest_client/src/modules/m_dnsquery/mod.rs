@@ -24,12 +24,25 @@ impl Mdns {
     }
 }
 
-/**
-*? @brief Runs a mDNS query for X seconds
-*? @param mdns A mutable reference to the Mdns struct
-*? @param service_type The service type to query for
-*? @param scan_time The number of seconds to query for
-*/
+/// Runs a mDNS query for X seconds
+/// ## Arguments
+/// - `mdns` A mutable reference to the Mdns struct
+/// - `service_type` The service type to query for
+/// - `scan_time` The number of seconds to query for
+/// ## Example
+/// ```
+/// // Create a new Mdns struct
+///let mut mdns: m_dnsquery::Mdns = m_dnsquery::Mdns {
+///    base_url: HashMap::new(),
+///    name: Vec::new(),
+///};
+/// // Run a mDNS query for 10 seconds
+///let ref_mdns = &mut mdns;
+///m_dnsquery::run_query(ref_mdns, String::from("_http._tcp"), 10);
+/// ```
+/// ## Notes
+/// ***The service type should not have a '.' or a 'local' at the end.*** <br>
+/// ***The program adds ".local." automatically.***
 pub fn run_query(instance: &mut Mdns, mut service_type: String, scan_time: u64) {
     let mdns = ServiceDaemon::new().expect(
         "Failed to create daemon. Please install Bonjour on your system"
@@ -73,20 +86,46 @@ pub fn run_query(instance: &mut Mdns, mut service_type: String, scan_time: u64) 
     }
 }
 
-/**
-*? @brief Returns a map of the base urls found
-*? @param mdns A mutable reference to the Mdns struct
-*? @return A map of strings containing the names of the services
-*/
+/// Returns a map of the base urls found
+/// ## Arguments
+/// - `mdns` A mutable reference to the Mdns struct
+/// ## Return
+/// A map of all the base urls found for the service type
+/// ## Example
+/// ```
+/// // Create a new Mdns struct
+///let mut mdns: m_dnsquery::Mdns = m_dnsquery::Mdns {
+///    base_url: HashMap::new(),
+///    name: Vec::new(),
+///};
+/// // Run a query for 10 seconds
+///let ref_mdns = &mut mdns;
+///m_dnsquery::run_query(ref_mdns, String::from("_http._tcp"), 10);
+/// // Get the base urls map
+///let urls_map = m_dnsquery::get_url_map(ref_mdns); 
+/// ```
 pub fn get_url_map(instance: &mut Mdns) -> &mut HashMap<String, String> {
     &mut instance.base_url
 }
 
-/**
-*? @brief Returns a vector of the base urls found
-*? @param mdns A mutable reference to the Mdns struct
-*? @return A vector of strings containing the names of the services
-*/
+/// Returns a vector of the base urls found
+/// ## Arguments
+/// - `mdns` A mutable reference to the Mdns struct
+/// ## Return
+/// A vector of all the urls found for the service type
+/// ## Example
+/// ```
+/// // Create a new Mdns struct
+/// let mut mdns: m_dnsquery::Mdns = m_dnsquery::Mdns {
+///    base_url: HashMap::new(),
+///   name: Vec::new(),
+/// };
+/// // Run a query for 10 seconds
+/// let ref_mdns = &mut mdns;
+/// m_dnsquery::run_query(ref_mdns, String::from("_http._tcp"), 10);
+/// // Get the names vector
+/// let vec = m_dnsquery::get_urls(ref_mdns);
+/// ```
 pub fn get_urls(instance: &Mdns) -> Vec<&String> {
     let mut urls: Vec<&String> = Vec::new();
     for (name, url) in &instance.base_url {
