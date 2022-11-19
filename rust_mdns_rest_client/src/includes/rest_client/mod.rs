@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 #![cfg_attr(
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
@@ -25,8 +26,6 @@ impl RESTClient {
       base_url
     }
   }
-
-  // [...]
 }
 
 #[tokio::main]
