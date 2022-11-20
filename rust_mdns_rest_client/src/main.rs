@@ -14,7 +14,7 @@ async fn main() {
     env_logger::init();
     info!("Starting up");
     // call the REST client
-    modules::rest_client::run()
+    rest_client::run()
         .await
         .expect("Error in REST client");
 }
