@@ -6,6 +6,7 @@
 
 mod modules;
 use log::info;
+use modules::rest_client;
 use std::collections::hash_map::HashMap;
 
 #[tokio::main]
