@@ -197,6 +197,6 @@ pub async fn generate_json(instance: &Mdns) -> Result<(), Box<dyn std::error::Er
     info!("{:?}", config);
     // write the json object to a file
     let to_string_json = serde_json::to_string_pretty(&config)?;
-    let write_to_file = tokio::fs::write("config/config.json", to_string_json).await?;
-    Ok(write_to_file)
+    tokio::fs::write("config/config.json", to_string_json).await?;
+    Ok(())
 }

@@ -86,9 +86,9 @@ pub async fn run_mdns_query() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .expect("Error in mDNS query");
     info!("MDNS query complete");
-    info!("MDNS query results: {:#?}", m_dnsquery::get_urls(&ref_mdns)); // get's an array of the base urls found
-    let result = m_dnsquery::generate_json(&ref_mdns).await?; // generates a json file with the base urls found
-    Ok(result)
+    info!("MDNS query results: {:#?}", m_dnsquery::get_urls(&*ref_mdns)); // get's an array of the base urls found
+    m_dnsquery::generate_json(&*ref_mdns).await?; // generates a json file with the base urls found
+    Ok(())
 }
 
 /// A function to run a REST Client and create a new RESTClient instance for each device found
