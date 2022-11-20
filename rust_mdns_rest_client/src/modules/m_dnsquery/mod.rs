@@ -68,7 +68,7 @@ pub async fn run_query(
     // while let Ok(event) = receiver.recv() {}
     while now.elapsed().as_secs() < scan_time {
         //* let event = receiver.recv().expect("Failed to receive event");
-        if let Ok(event) = receiver.recv() {
+        if let Ok(event) = receiver.recv_async().await {
             match event {
                 ServiceEvent::ServiceResolved(info) => {
                     info!(
@@ -159,19 +159,22 @@ pub fn get_urls(instance: &Mdns) -> Vec<String> {
 
 pub async fn generate_json(instance: &Mdns) {
     let data = get_urls(instance);
-    let mut json: serde_json::Value = serde_json::from_str("{}").unwrap();
+    //let mut json: serde_json::Value = serde_json::from_str("{}").unwrap();
+    let mut json: Option<serde_json::Value> = None;
     for url in data {
-        // create an json object then add the urls to an array
-        json = serde_json::json!({
+        // create a json object then add the urls to an array
+        json = Some(serde_json::json!({
             "urls": [url],
-        });
+        }));
     }
-
-    let mdns_data: Response = serde_json::from_value(json).unwrap();
-    eprintln!("{:?}", mdns_data);
-    std::fs::write(
-        "config/config.json",
-        serde_json::to_string_pretty(&mdns_data).unwrap(),
-    )
-    .unwrap();
+    let config: Response;
+    if let Some(json) = json {
+        config = serde_json::from_value(json).unwrap();
+    } else {
+        config = Response { urls: Vec::new() };
+    }
+    info!("{:?}", config);
+    // write the json object to a file
+    let file = std::fs::File::create("config/config.json").unwrap();
+    serde_json::to_writer_pretty(file, &config).unwrap();
 }

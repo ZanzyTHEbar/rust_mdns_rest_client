@@ -14,7 +14,7 @@ async fn main() {
     env_logger::init();
     info!("Starting up");
     // call the REST client
-    rest_client::run()
+    rest_client::run_mdns_query()
         .await
         .expect("Error in REST client");
 }

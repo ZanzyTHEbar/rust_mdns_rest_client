@@ -71,9 +71,8 @@ pub async fn request(rest_client: &RESTClient) -> Result<(), Box<dyn std::error:
 /// ## Arguments
 /// - `service_type` The service type to query for
 /// - `scan_time` The number of seconds to query for
-pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_mdns_query() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting MDNS query to find devices");
-    /* let rt = Runtime::new().unwrap(); */
     let base_url = Arc::new(Mutex::new(HashMap::new()));
     let thread_arc = base_url.clone();
     let mut mdns: m_dnsquery::Mdns = m_dnsquery::Mdns {
@@ -89,5 +88,14 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     info!("MDNS query complete");
     info!("MDNS query results: {:#?}", m_dnsquery::get_urls(&ref_mdns)); // get's an array of the base urls found
     m_dnsquery::generate_json(&ref_mdns).await; // generates a json file with the base urls found
+    Ok(())
+}
+
+/// A function to run a REST Client and create a new RESTClient instance for each device found
+/// ## Arguments
+/// - `service_type` The service type to query for
+/// - `scan_time` The number of seconds to query for
+pub async fn run_rest_client() -> Result<(), Box<dyn std::error::Error>> {
+    info!("Starting REST client");
     Ok(())
 }
