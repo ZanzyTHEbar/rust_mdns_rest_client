@@ -8,6 +8,9 @@
 
 use log::info;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
+use serde::{Deserialize, Serialize};
+use serde_json;
+use sprintf::sprintf;
 use std::collections::hash_map::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -19,6 +22,14 @@ pub type MdnsMap = Arc<Mutex<HashMap<String, String>>>; // Arc<Mutex<HashMap<Str
 pub struct Mdns {
     pub base_url: MdnsMap,
     pub name: Vec<String>,
+}
+
+/// A struct to hold the mDNS query results
+/// ## Fields
+/// - `response`: a hashmap of the response
+#[derive(Debug, Deserialize, Serialize)]
+struct Response {
+    urls: Vec<String>,
 }
 
 /// Runs a mDNS query for X seconds
@@ -144,4 +155,23 @@ pub fn get_urls(instance: &Mdns) -> Vec<String> {
         urls.push(url.to_string());
     }
     urls
+}
+
+pub async fn generate_json(instance: &Mdns) {
+    let data = get_urls(instance);
+    let mut json: serde_json::Value = serde_json::from_str("{}").unwrap();
+    for url in data {
+        // create an json object then add the urls to an array
+        json = serde_json::json!({
+            "urls": [url],
+        });
+    }
+
+    let mdns_data: Response = serde_json::from_value(json).unwrap();
+    eprintln!("{:?}", mdns_data);
+    std::fs::write(
+        "config/config.json",
+        serde_json::to_string_pretty(&mdns_data).unwrap(),
+    )
+    .unwrap();
 }

@@ -92,23 +92,6 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to run MDNS query");
     info!("MDNS query complete");
     info!("MDNS query results: {:#?}", m_dnsquery::get_urls(&ref_mdns)); // get's an array of the base urls found
-
-    /* info!("Starting up REST clients");
-    let urls_map = m_dnsquery::get_url_map(ref_mdns);
-    info!("URLs map: {:#?}", urls_map);
-    let key = urls_map.keys().next().unwrap();
-    let url = urls_map.get(key).unwrap();
-    // append the api endpoint to the base url
-    let url = format!("{}{}", url, "/api/v1/builtin/command/json?type=data");
-    info!("URL: {}", url);
-
-    let rt = Runtime::new().unwrap();
-    rt.block_on(async move {
-        let rest_client = RESTClient::new(url);
-        request(&rest_client).await.expect("Error in REST request");
-        //bonus, you could spawn tasks too
-        //tokio::spawn(async { async_function("task1").await });
-        //tokio::spawn(async { async_function("task2").await });
-    }); */
+    m_dnsquery::generate_json(&ref_mdns).await; // generates a json file with the base urls found
     Ok(())
 }
