@@ -187,7 +187,7 @@ pub async fn generate_json(instance: &Mdns) -> Result<(), Box<dyn std::error::Er
             Ok(serde_json) => serde_json,
             Err(err) => {
                 error!("Error configuring JSON config file: {}", err);
-                return Ok(());
+                return Err("Error configuring JSON config file".into());
             }
         };
         config = serde_json_result;
