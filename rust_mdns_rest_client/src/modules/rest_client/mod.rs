@@ -16,6 +16,12 @@ use log::{debug, error, info, warn};
 use reqwest::Client;
 use serde::Deserialize;
 use std::collections::hash_map::HashMap;
+use std::sync::{Arc, Mutex};
+//use std::thread;
+//use std::time::Duration;
+use tokio::runtime::Runtime;
+use tokio::time::*;
+
 //use lazy_static::lazy_static;
 
 /* lazy_static! {
@@ -26,7 +32,7 @@ use std::collections::hash_map::HashMap;
 /// - `response`: a hashmap of the response
 #[derive(Deserialize, Debug)]
 pub struct Response {
-    pub response: String,
+    pub response: HashMap<String, String>,
 }
 
 /// A struct to hold the REST client
@@ -38,8 +44,6 @@ pub struct Response {
 pub struct RESTClient {
     http_client: Client,
     base_url: String,
-    pub name: String,
-    pub data: HashMap<String, String>,
 }
 
 /// A function to create a new RESTClient instance
@@ -50,39 +54,61 @@ impl RESTClient {
         Self {
             http_client: Client::new(),
             base_url,
-            name: String::new(),
-            data: HashMap::new(),
         }
     }
 }
 
-#[tokio::main]
-pub async fn request() -> Result<(), Box<dyn std::error::Error>> {
-    info!("Starting REST request");
-
+pub async fn request(rest_client: &RESTClient) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Making REST request");
+    let response = rest_client
+        .http_client
+        .get(&rest_client.base_url)
+        .send()
+        .await?
+        .json::<Response>()
+        .await?;
+    info!("Response: {:?}", response.response);
     Ok(())
 }
 
-#[tokio::main]
-pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// A function to run a mDNS query and create a new RESTClient instance for each device found
+/// ## Arguments
+/// - `service_type` The service type to query for
+/// - `scan_time` The number of seconds to query for
+pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    info!("Starting MDNS query to find devices");
+    /* let rt = Runtime::new().unwrap(); */
+    let base_url = Arc::new(Mutex::new(HashMap::new()));
+    let thread_arc = base_url.clone();
     let mut mdns: m_dnsquery::Mdns = m_dnsquery::Mdns {
-        base_url: HashMap::new(),
+        base_url: thread_arc,
         name: Vec::new(),
     };
-
     let ref_mdns = &mut mdns;
 
-    info!("Starting MDNS query to find devices");
+    info!("Thread 1 acquired lock");
     m_dnsquery::run_query(ref_mdns, String::from("_waterchamber._tcp"), 10)
+        .await
         .expect("Failed to run MDNS query");
     info!("MDNS query complete");
-    info!("MDNS query results: {:#?}", m_dnsquery::get_urls(ref_mdns)); // get's an array of the base urls found
-    info!("Starting up REST clients");
-    debug!("Instatiating REST client for device 1");
+    info!("MDNS query results: {:#?}", m_dnsquery::get_urls(&ref_mdns)); // get's an array of the base urls found
+
+    /* info!("Starting up REST clients");
     let urls_map = m_dnsquery::get_url_map(ref_mdns);
-    let rest_client = RESTClient::new(urls_map.remove("waterchamber").unwrap());
+    info!("URLs map: {:#?}", urls_map);
+    let key = urls_map.keys().next().unwrap();
+    let url = urls_map.get(key).unwrap();
+    // append the api endpoint to the base url
+    let url = format!("{}{}", url, "/api/v1/builtin/command/json?type=data");
+    info!("URL: {}", url);
 
-    debug!("Instatiating REST client for device 2");
-
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async move {
+        let rest_client = RESTClient::new(url);
+        request(&rest_client).await.expect("Error in REST request");
+        //bonus, you could spawn tasks too
+        //tokio::spawn(async { async_function("task1").await });
+        //tokio::spawn(async { async_function("task2").await });
+    }); */
     Ok(())
 }

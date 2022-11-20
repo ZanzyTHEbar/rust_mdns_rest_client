@@ -9,24 +9,16 @@
 use log::info;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::collections::hash_map::HashMap;
+use std::sync::{Arc, Mutex};
 
+pub type MdnsMap = Arc<Mutex<HashMap<String, String>>>; // Arc<Mutex<HashMap<String, String>>>;
 /// A struct to hold the mDNS query results
 /// - `base_url`: a hashmap of the base urls found
 /// - `name`: a vector of the names of the devices found
 #[derive(Debug)]
 pub struct Mdns {
-    pub base_url: HashMap<String, String>,
+    pub base_url: MdnsMap,
     pub name: Vec<String>,
-}
-
-/// A function to check if the mDNS struct can hold another instance
-/// - `other`: a reference to the Mdns struct
-/// ## Returns
-/// - `bool`: true if the reference to the Mdns struct is smaller than the current struct instance
-impl Mdns {
-    pub fn can_hold(&self, other: &Mdns) -> bool {
-        self.base_url.len() > other.base_url.len()
-    }
 }
 
 /// Runs a mDNS query for X seconds
@@ -48,7 +40,7 @@ impl Mdns {
 /// ## Notes
 /// ***The service type should not have a '.' or a 'local' at the end.*** <br>
 /// ***The program adds ".local." automatically.***
-pub fn run_query(
+pub async fn run_query(
     instance: &mut Mdns,
     mut service_type: String,
     scan_time: u64,
@@ -69,22 +61,28 @@ pub fn run_query(
             match event {
                 ServiceEvent::ServiceResolved(info) => {
                     info!(
-                        "At {:?}: Resolved a new service: {} IP: {:#?}:{:#?}",
+                        "At {:?}: Resolved a new service: {} IP: {:#?}:{:#?} Hostname: {:#?}",
                         now.elapsed(),
                         info.get_fullname(),
                         info.get_addresses(),
-                        info.get_port()
+                        info.get_port(),
+                        info.get_hostname(),
                     );
                     //* split the fullname by '.' and take the first element
-                    let name = info.get_fullname().split('.').next().unwrap();
+                    let name = info.get_hostname();
                     info!("Service name: {}", name);
-                    //* append name to 'http://' and '.local' to get the base url
+                    //* remove the period at the end of the name
+                    let name = name.trim_end_matches('.');
+                    //* append name to 'http://' to get the base url
                     let mut base_url = String::from("http://");
                     base_url.push_str(name);
-                    base_url.push_str(".local");
                     info!("Base URL: {}", base_url);
                     //* add the base url to the hashmap
-                    instance.base_url.insert(name.to_string(), base_url);
+                    instance
+                        .base_url
+                        .lock()
+                        .unwrap()
+                        .insert(name.to_string(), base_url);
                     instance.name.push(name.to_string());
                 }
                 other_event => {
@@ -118,7 +116,7 @@ pub fn run_query(
 /// // Get the base urls map
 ///let urls_map = m_dnsquery::get_url_map(ref_mdns);
 /// ```
-pub fn get_url_map(instance: &mut Mdns) -> &mut HashMap<String, String> {
+pub fn get_url_map(instance: &mut Mdns) -> &mut MdnsMap {
     &mut instance.base_url
 }
 
@@ -140,10 +138,10 @@ pub fn get_url_map(instance: &mut Mdns) -> &mut HashMap<String, String> {
 /// // Get the names vector
 /// let vec = m_dnsquery::get_urls(ref_mdns);
 /// ```
-pub fn get_urls(instance: &Mdns) -> Vec<&String> {
-    let mut urls: Vec<&String> = Vec::new();
-    for (name, url) in &instance.base_url {
-        urls.push(url);
+pub fn get_urls(instance: &Mdns) -> Vec<String> {
+    let mut urls: Vec<String> = Vec::new();
+    for (_, url) in instance.base_url.lock().unwrap().iter() {
+        urls.push(url.to_string());
     }
     urls
 }
