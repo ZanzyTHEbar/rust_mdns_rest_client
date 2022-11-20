@@ -17,10 +17,6 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::collections::hash_map::HashMap;
 use std::sync::{Arc, Mutex};
-//use std::thread;
-//use std::time::Duration;
-use tokio::runtime::Runtime;
-use tokio::time::*;
 
 //use lazy_static::lazy_static;
 
