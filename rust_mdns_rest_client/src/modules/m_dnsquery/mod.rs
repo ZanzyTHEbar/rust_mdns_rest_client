@@ -6,7 +6,7 @@
     windows_subsystem = "windows"
 )]
 
-use log::info;
+use log::{error, info};
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -92,7 +92,7 @@ pub async fn run_query(
                     instance
                         .base_url
                         .lock()
-                        .unwrap()
+                        .expect("Failed to lock base_url in run_query")
                         .insert(name.to_string(), base_url);
                     instance.name.push(name.to_string());
                 }
@@ -151,13 +151,26 @@ pub fn get_url_map(instance: &mut Mdns) -> &mut MdnsMap {
 /// ```
 pub fn get_urls(instance: &Mdns) -> Vec<String> {
     let mut urls: Vec<String> = Vec::new();
-    for (_, url) in instance.base_url.lock().unwrap().iter() {
+
+    let instance_lock = instance.base_url.lock();
+    let instance_check_result = match instance_lock {
+        Ok(instance_lock) => instance_lock,
+        Err(err) => {
+            error!(
+                "Failed to lock the instance: {:?} with error: {} in get_urls",
+                instance, err
+            );
+            return urls;
+        }
+    };
+
+    for (_, url) in instance_check_result.iter() {
         urls.push(url.to_string());
     }
     urls
 }
 
-pub async fn generate_json(instance: &Mdns) {
+pub async fn generate_json(instance: &Mdns) -> Result<(), Box<dyn std::error::Error>> {
     let data = get_urls(instance);
     //let mut json: serde_json::Value = serde_json::from_str("{}").unwrap();
     let mut json: Option<serde_json::Value> = None;
@@ -169,12 +182,21 @@ pub async fn generate_json(instance: &Mdns) {
     }
     let config: Response;
     if let Some(json) = json {
-        config = serde_json::from_value(json).unwrap();
+        let _serde_json = serde_json::from_value(json);
+        let serde_json_result = match _serde_json {
+            Ok(serde_json) => serde_json,
+            Err(err) => {
+                error!("Error configuring JSON config file: {}", err);
+                return Ok(());
+            }
+        };
+        config = serde_json_result;
     } else {
         config = Response { urls: Vec::new() };
     }
     info!("{:?}", config);
     // write the json object to a file
-    let file = std::fs::File::create("config/config.json").unwrap();
-    serde_json::to_writer_pretty(file, &config).unwrap();
+    let to_string_json = serde_json::to_string_pretty(&config)?;
+    let write_to_file = tokio::fs::write("config/config.json", to_string_json).await?;
+    Ok(write_to_file)
 }

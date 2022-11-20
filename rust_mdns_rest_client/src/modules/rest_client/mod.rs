@@ -84,11 +84,11 @@ pub async fn run_mdns_query() -> Result<(), Box<dyn std::error::Error>> {
     info!("Thread 1 acquired lock");
     m_dnsquery::run_query(ref_mdns, String::from("_waterchamber._tcp"), 10)
         .await
-        .expect("Failed to run MDNS query");
+        .expect("Error in mDNS query");
     info!("MDNS query complete");
     info!("MDNS query results: {:#?}", m_dnsquery::get_urls(&ref_mdns)); // get's an array of the base urls found
-    m_dnsquery::generate_json(&ref_mdns).await; // generates a json file with the base urls found
-    Ok(())
+    let result = m_dnsquery::generate_json(&ref_mdns).await?; // generates a json file with the base urls found
+    Ok(result)
 }
 
 /// A function to run a REST Client and create a new RESTClient instance for each device found
