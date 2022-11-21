@@ -21,7 +21,7 @@ pub type MdnsMap = Arc<Mutex<HashMap<String, String>>>; // Arc<Mutex<HashMap<Str
 #[derive(Debug)]
 pub struct Mdns {
     pub base_url: MdnsMap,
-    pub name: Vec<String>,
+    pub names: Vec<String>,
 }
 
 /// A struct to hold the mDNS query results
@@ -29,6 +29,7 @@ pub struct Mdns {
 /// - `response`: a hashmap of the response
 #[derive(Debug, Deserialize, Serialize)]
 struct Response {
+    names: Vec<String>,
     urls: Vec<String>,
 }
 
@@ -94,7 +95,7 @@ pub async fn run_query(
                         .lock()
                         .expect("Failed to lock base_url in run_query")
                         .insert(name.to_string(), base_url);
-                    instance.name.push(name.to_string());
+                    instance.names.push(name.to_string());
                 }
                 other_event => {
                     info!(
@@ -174,9 +175,10 @@ pub async fn generate_json(instance: &Mdns) -> Result<(), Box<dyn std::error::Er
     let data = get_urls(instance);
     //let mut json: serde_json::Value = serde_json::from_str("{}").unwrap();
     let mut json: Option<serde_json::Value> = None;
-    for url in data {
-        // create a json object then add the urls to an array
+    // create a data iterator
+    for (i, url) in data.iter().enumerate() {
         json = Some(serde_json::json!({
+            "names": [instance.names[i].to_string()],
             "urls": [url],
         }));
     }
@@ -192,7 +194,10 @@ pub async fn generate_json(instance: &Mdns) -> Result<(), Box<dyn std::error::Er
         };
         config = serde_json_result;
     } else {
-        config = Response { urls: Vec::new() };
+        config = Response {
+            urls: Vec::new(),
+            names: Vec::new(),
+        };
     }
     info!("{:?}", config);
     // write the json object to a file
