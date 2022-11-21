@@ -18,10 +18,12 @@ async fn main() {
 
     env_logger::init();
     info!("Starting up");
-    // call the REST client
+
+    // call the MDNS service
     rest_client::run_mdns_query(service_type, scan_time)
         .await
         .expect("Error in MDNS client");
+
     // call the REST client
     rest_client::run_rest_client(endpoint)
         .await
