@@ -18,43 +18,7 @@ use serde::Deserialize;
 use std::collections::hash_map::HashMap;
 use std::sync::{Arc, Mutex};
 
-//use lazy_static::lazy_static;
-
-/* lazy_static! {
-    static ref ;
-} */
-
-/// A struct to hold the REST client response
-/// - `response`: a hashmap of the response
-#[derive(Deserialize, Debug)]
-pub struct Response {
-    #[serde(rename = "id")]
-    id: String,
-
-    #[serde(rename = "timestamp")]
-    timestamp: String,
-
-    #[serde(rename = "max_temp")]
-    max_temp: i64,
-
-    #[serde(rename = "num_temp_sensors")]
-    num_temp_sensors: i64,
-
-    #[serde(rename = "water_level_liters")]
-    water_level_liters: f64,
-
-    #[serde(rename = "water_level_percentage")]
-    water_level_percentage: f64,
-
-    #[serde(rename = "humidity_dht")]
-    humidity_dht: i64,
-
-    #[serde(rename = "humidity_temp_dht")]
-    humidity_temp_dht: f64,
-
-    #[serde(rename = "temp_sensors")]
-    temp_sensors: Vec<f64>,
-}
+pub type Db = HashMap<String, serde_json::Value>;
 
 /// A struct to hold the REST client
 /// ## Fields
@@ -79,17 +43,27 @@ impl RESTClient {
     }
 }
 
-pub async fn request(rest_client: &RESTClient) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn request(
+    rest_client: &RESTClient,
+) -> Result<HashMap<String, serde_json::Value>, Box<dyn std::error::Error>> {
     info!("Making REST request");
     let response = rest_client
         .http_client
         .get(&rest_client.base_url)
         .send()
         .await?
-        .json::<Response>()
+        .json::<HashMap<String, serde_json::Value>>()
+        //.json::<Response>()
         .await?;
+
+    // parse the response key value pairs into a hashmap
+    /* let mut data: HashMap<String, serde_json::Value> = HashMap::new();
+    for (key, value) in &response {
+        data.insert(key.to_string(), value.to_owned());
+    }
     info!("Response: {:?}", response);
-    Ok(())
+    info!("Data: {:?}", data); */
+    Ok(response)
 }
 
 /// A function to run a mDNS query and create a new RESTClient instance for each device found
@@ -128,32 +102,37 @@ pub async fn run_mdns_query(
 /// - `scan_time` The number of seconds to query for
 pub async fn run_rest_client(endpoint: String) -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting REST client");
+    // create a new db instance
+
     // read the json config file
     let data = std::fs::read_to_string("config/config.json").expect("Unable to read config file");
     // parse the json config file
     let config: serde_json::Value =
         serde_json::from_str(&data).expect("Unable to parse config file");
     debug!("Urls: {:?}", config);
+
     // create iterator for loop
     for (i, item) in config.as_object().iter().enumerate() {
         // create a new RESTClient instance for each url
-        let full_url = format!(
-            "{}{}",
-            item["urls"][i].as_str().expect("Unable to parse url"),
-            endpoint
-        );
+        let mut url = item["urls"][i].as_str();
+        let full_url_result = match url {
+            Some(url) => url,
+            None => {
+                error!("Unable to get url");
+                url = Some("http://localhost:8080");
+                url.unwrap()
+            }
+        };
+        let full_url = format!("{}{}", full_url_result, endpoint);
         //info!("Full url: {}", full_url);
         let rest_client = RESTClient::new(full_url);
-        //request(&rest_client).await.expect("Error in REST request");
-        // start a new thread for each RESTClient instance
-        // pass the response to the main thread
-        let thread = tokio::spawn(async move {
-            loop {
-                request(&rest_client).await.expect("Error in REST request");
-                tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        let request_result = request(&rest_client).await;
+        match request_result {
+            Ok(response) => {
+                info!("Response: {:?}", response);
             }
-        });
-        thread.await.expect("Error in thread");
+            Err(e) => error!("Request failed: {}", e),
+        }
     }
     Ok(())
 }
