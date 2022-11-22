@@ -55,14 +55,6 @@ pub async fn request(
         .json::<HashMap<String, serde_json::Value>>()
         //.json::<Response>()
         .await?;
-
-    // parse the response key value pairs into a hashmap
-    /* let mut data: HashMap<String, serde_json::Value> = HashMap::new();
-    for (key, value) in &response {
-        data.insert(key.to_string(), value.to_owned());
-    }
-    info!("Response: {:?}", response);
-    info!("Data: {:?}", data); */
     Ok(response)
 }
 
